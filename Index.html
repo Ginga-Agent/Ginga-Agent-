@@ -1,1 +1,418 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ginga Agent - Koleksi Chip Kognitif</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        /* Gaya Dasar & Tema */
+        :root {
+            --bg-color: #0c121e;
+            --text-color: #ffffff;
+            --primary-color: #3b82f6; /* Biru Ginga */
+            --accent-color: #22d3ee; /* Cyan Terang */
+            --card-bg: #111a2c;
+            --border-color: #2a3b55;
+            --font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
 
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; padding: 0; }
+
+        /* Utilitas Layout */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .flex { display: flex; align-items: center; }
+        .flex-between { justify-content: space-between; }
+        .flex-center { justify-content: center; }
+        .grid { display: grid; gap: 20px; }
+
+        /* Navigasi */
+        header {
+            background-color: rgba(17, 26, 44, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 0;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-links li { margin-left: 20px; font-weight: 500; opacity: 0.8; }
+        .nav-links li:hover { opacity: 1; color: var(--accent-color); }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background-color: #2563eb; }
+        .btn-connect { background-color: transparent; border: 2px solid var(--primary-color); color: var(--primary-color); }
+        .btn-connect:hover { background-color: var(--primary-color); color: white; }
+
+        /* Hero Section */
+        .hero {
+            padding: 100px 0;
+            text-align: center;
+            background: radial-gradient(circle at center, #1e293b 0%, #0c121e 100%);
+        }
+
+        .hero h1 { font-size: 48px; margin-bottom: 10px; color: var(--accent-color); }
+        .hero p { font-size: 18px; opacity: 0.7; max-width: 600px; margin: 0 auto 30px; }
+
+        /* Minting Section */
+        .mint-section { padding: 80px 0; }
+        .mint-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .mint-card img { width: 100px; height: 100px; margin-bottom: 20px; }
+        .mint-stats { margin-bottom: 25px; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 15px 0; }
+        .stat-row { justify-content: space-between; margin-bottom: 10px; }
+        .stat-label { opacity: 0.7; }
+        .stat-value { font-weight: 600; color: var(--accent-color); }
+
+        .mint-controls { display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .qty-btn { background: #1f293a; border: none; color: white; font-size: 20px; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .mint-qty { font-size: 24px; font-weight: bold; margin: 0 20px; }
+
+        .btn-mint { width: 100%; padding: 15px; font-size: 18px; }
+
+        /* Gallery Section */
+        .gallery { padding: 80px 0; }
+        .gallery-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+        .nft-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .nft-card:hover { transform: translateY(-5px); }
+        .nft-card img { width: 100%; height: 200px; object-fit: cover; }
+        .nft-info { padding: 15px; }
+        .nft-name { font-weight: 600; font-size: 16px; margin-bottom: 5px; }
+        .nft-status { font-size: 12px; padding: 3px 8px; border-radius: 4px; display: inline-block; }
+        .status-available { background-color: #166534; color: #86efac; }
+        .status-minted { background-color: #991b1b; color: #fca5a5; }
+
+        /* Footer */
+        footer {
+            padding: 50px 0;
+            border-top: 1px solid var(--border-color);
+            background-color: #0a1019;
+            text-align: center;
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .nav-links { display: none; }
+            .hero, .mint-section, .gallery { padding: 50px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+    <div class="container flex flex-between">
+        <a href="#" class="logo">GINGA AGENT</a>
+        <nav>
+            <ul class="nav-links flex">
+                <li><a href="#hero">Beranda</a></li>
+                <li><a href="#mint">Mint</a></li>
+                <li><a href="#gallery">Koleksi</a></li>
+            </ul>
+        </nav>
+        <button class="btn btn-connect" id="connectButton">Connect Wallet</button>
+    </div>
+</header>
+
+<!-- Hero -->
+<section id="hero" class="hero">
+    <div class="container">
+        <h1>Koleksi Kognitif Ginga Agent</h1>
+        <p>3000 chip unik dengan teknologi kognitif yang berbeda. Klaim 2 chip pertamamu secara gratis!</p>
+        <a href="#mint" class="btn">Mint Sekarang</a>
+    </div>
+</section>
+
+<!-- Mint Section -->
+<section id="mint" class="mint-section">
+    <div class="container">
+        <div class="mint-card">
+            <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=100" alt="Ginga Agent Logo">
+            <h2>Mint Ginga Chip</h2>
+            <p>Miliki chip kognitif Anda. Ingat, hanya 2 pertamamu yang gratis!</p>
+            
+            <div class="mint-stats">
+                <div class="stat-row flex">
+                    <span class="stat-label">Ter-mint / Total</span>
+                    <span class="stat-value"><span id="mintedCount">0</span> / 3000</span>
+                </div>
+                <div class="stat-row flex">
+                    <span class="stat-label">Harga Mint</span>
+                    <span class="stat-value">0.01 BNB</span>
+                </div>
+                <div class="stat-row flex">
+                    <span class="stat-label">Free Mint (Tersisa)</span>
+                    <span class="stat-value"><span id="freeMintsLeft">2</span> / 2</span>
+                </div>
+            </div>
+
+            <div id="mintControls" style="display: none;">
+                <div class="mint-controls">
+                    <button class="qty-btn" id="minusBtn">-</button>
+                    <span class="mint-qty" id="mintQty">1</span>
+                    <button class="qty-btn" id="plusBtn">+</button>
+                </div>
+                <button class="btn btn-mint" id="mintButton">Mint Ginga Chip</button>
+            </div>
+            <div id="connectPrompt">
+                <p style="opacity: 0.7; margin-bottom: 20px;">Silakan hubungkan dompet Anda untuk melakukan minting.</p>
+                <button class="btn btn-connect btn-mint" id="connectButtonPrompt">Connect Wallet</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Gallery Section -->
+<section id="gallery" class="gallery">
+    <div class="container">
+        <h2 style="text-align: center; margin-bottom: 40px; color: var(--accent-color);">Eksplorasi Ginga Chips (Simulasi)</h2>
+        <div class="gallery-grid grid" id="nftGallery">
+            <!-- NFT Cards (Generated by JS) -->
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>&copy; 2024 Ginga Agent. Seluruh hak cipta dilindungi.</p>
+        <p style="font-size: 12px; margin-top: 10px;">Platform ini menggunakan sistem validasi internal dan tidak terdaftar di BSCScan.</p>
+    </div>
+</footer>
+
+<script>
+    // --- KONFIGURASI ---
+    const RECEIVER_ADDRESS = "0x568612337c43645752e40D227ddBb6680fB81359"; // Alamat Anda
+    const MINT_PRICE_BNB = 0.01;
+    const MAX_SUPPLY = 3000;
+    const MAX_FREE_PER_WALLET = 2;
+
+    // --- STATE INTERNAL (Simulasi Lokal) ---
+    // Di dunia nyata, data ini harus disimpan di database backend Anda.
+    let totalMintedCount = 0;
+    const mintedNfts = []; // Array of tokenIds yang sudah termint
+    const freeMintsClaimed = {}; // Format: {walletAddress: count}
+
+    // --- UI ELEMENTS ---
+    const connectButtons = document.querySelectorAll("#connectButton, #connectButtonPrompt");
+    const mintControls = document.getElementById("mintControls");
+    const connectPrompt = document.getElementById("connectPrompt");
+    const mintedCountEl = document.getElementById("mintedCount");
+    const freeMintsLeftEl = document.getElementById("freeMintsLeft");
+    const mintQtyEl = document.getElementById("mintQty");
+    const minusBtn = document.getElementById("minusBtn");
+    const plusBtn = document.getElementById("plusBtn");
+    const mintButton = document.getElementById("mintButton");
+    const nftGallery = document.getElementById("nftGallery");
+
+    // --- WEB3 STATE ---
+    let provider, signer, userAddress;
+    let mintQty = 1;
+
+    // --- INISIALISASI ---
+    updateGlobalMintStats();
+    generateGallerySim();
+
+    // --- EVENTS ---
+    connectButtons.forEach(btn => btn.addEventListener("click", connectWallet));
+    
+    minusBtn.addEventListener("click", () => {
+        if (mintQty > 1) { mintQty--; mintQtyEl.innerText = mintQty; }
+    });
+    plusBtn.addEventListener("click", () => {
+        mintQty++; mintQtyEl.innerText = mintQty;
+    });
+
+    mintButton.addEventListener("click", performDirectMint);
+
+    // --- FUNGSI-FUNGSI ---
+
+    // 1. Koneksi Wallet
+    async function connectWallet() {
+        if (window.ethereum) {
+            try {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+                
+                onWalletConnected();
+            } catch (error) {
+                console.error("Koneksi gagal:", error);
+                alert("Gagal menghubungkan dompet.");
+            }
+        } else {
+            alert("MetaMask tidak terdeteksi. Silakan instal MetaMask.");
+        }
+    }
+
+    function onWalletConnected() {
+        connectButtons.forEach(btn => btn.innerText = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`);
+        connectPrompt.style.display = "none";
+        mintControls.style.display = "block";
+        updateUserFreeMintStats();
+    }
+
+    // 2. Update Stats (Global & User)
+    function updateGlobalMintStats() {
+        mintedCountEl.innerText = totalMintedCount;
+    }
+
+    function updateUserFreeMintStats() {
+        if (!userAddress) return;
+        const claimed = freeMintsClaimed[userAddress.toLowerCase()] || 0;
+        const left = Math.max(0, MAX_FREE_PER_WALLET - claimed);
+        freeMintsLeftEl.innerText = left;
+    }
+
+    // 3. Melakukan Direct Mint (Transfer BNB Direct)
+    async function performDirectMint() {
+        if (!signer || !userAddress) {
+            connectWallet();
+            return;
+        }
+
+        if (totalMintedCount + mintQty > MAX_SUPPLY) {
+            alert("Maaf, pasokan chip sudah habis!");
+            return;
+        }
+
+        const currentClaimed = freeMintsClaimed[userAddress.toLowerCase()] || 0;
+        const freeToMint = Math.max(0, Math.min(mintQty, MAX_FREE_PER_WALLET - currentClaimed));
+        const paidToMint = mintQty - freeToMint;
+
+        const totalCostBNB = paidToMint * MINT_PRICE_BNB;
+        console.log(`User ${userAddress} minting ${mintQty} chips. Free: ${freeToMint}, Paid: ${paidToMint}. Total cost: ${totalCostBNB} BNB`);
+
+        // A. Proses Pembayaran BNB ke Alamat Anda
+        if (totalCostBNB > 0) {
+            try {
+                // Konversi harga BNB ke Wei
+                const costInWei = ethers.utils.parseEther(totalCostBNB.toString());
+                
+                // Menampilkan notifikasi pembayaran
+                alert(`Anda akan melakukan pembayaran ${totalCostBNB} BNB langsung ke dompet penerima. Harap konfirmasi transaksi di dompet Anda.`);
+
+                // Mengirim transaksi transfer BNB
+                const tx = await signer.sendTransaction({
+                    to: RECEIVER_ADDRESS,
+                    value: costInWei
+                });
+
+                console.log("Transaksi pembayaran dikirim:", tx.hash);
+                
+                // Menunggu konfirmasi transaksi
+                const receipt = await tx.wait();
+                console.log("Transaksi pembayaran sukses:", receipt.transactionHash);
+
+            } catch (error) {
+                console.error("Gagal melakukan pembayaran BNB:", error);
+                alert("Transaksi pembayaran gagal atau dibatalkan. Minting chip tidak dapat dilanjutkan.");
+                return; // Berhenti jika pembayaran gagal
+            }
+        }
+
+        // B. Validasi Sukses: Update State Internal (Simulasi Sukses)
+        // Di sistem nyata, setelah pembayaran sukses (on-chain), Anda harus memanggil API backend Anda untuk
+        // mengupdate database dan secara resmi "memberikan" NFT ke user di sistem Anda.
+        totalMintedCount += mintQty;
+        freeMintsClaimed[userAddress.toLowerCase()] = currentClaimed + freeToMint;
+
+        // Simpan data NFT termint secara lokal
+        for (let i = 0; i < mintQty; i++) {
+            mintedNfts.push({
+                tokenId: mintedNfts.length + 1,
+                owner: userAddress
+            });
+        }
+
+        updateGlobalMintStats();
+        updateUserFreeMintStats();
+        generateGallerySim(); // Refresh gallery
+
+        const msg = paidToMint > 0 
+            ? `Selamat! Pembayaran ${totalCostBNB} BNB sukses dan Anda telah berhasil me-mint ${mintQty} Ginga Chips (Termasuk ${freeToMint} Free Mint)!`
+            : `Selamat! Anda berhasil me-mint ${mintQty} Free Ginga Chips!`;
+        alert(msg);
+    }
+
+    // 4. Simulasi Gallery
+    function generateGallerySim() {
+        nftGallery.innerHTML = ''; // Clear previous contents
+        const displayLimit = 12; // Tampilkan 12 pertama sebagai contoh
+
+        for (let i = 1; i <= displayLimit; i++) {
+            const isMinted = mintedNfts.some(nft => nft.tokenId === i);
+            const statusClass = isMinted ? 'status-minted' : 'status-available';
+            const statusText = isMinted ? 'Termint' : 'Tersedia';
+            
+            // Generate random image URL (contoh)
+            const imageUrl = `https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=200&sig=${i}`;
+
+            const nftCard = `
+                <div class="nft-card">
+                    <img src="${imageUrl}" alt="Ginga Chip #${i}">
+                    <div class="nft-info">
+                        <div class="nft-name">Ginga Chip #${i}</div>
+                        <span class="nft-status ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+            `;
+            nftGallery.insertAdjacentHTML('beforeend', nftCard);
+        }
+    }
+</script>
+
+</body>
+                      </html>
